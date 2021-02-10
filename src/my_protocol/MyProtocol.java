@@ -121,7 +121,8 @@ public class MyProtocol extends IRDTProtocol {
         }
 
         for (Integer[] i : output) {
-            System.out.println("[");
+
+            System.out.print("\n[");
             for (Integer j : i) {
                 System.out.print(j + ",");
             }
