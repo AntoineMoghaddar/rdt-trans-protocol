@@ -44,13 +44,28 @@ public class MyProtocol extends IRDTProtocol {
 
         System.arraycopy(fileContents, pointer, pkt, HEADERSIZE, datalen);
 
-        for (int i = 0; i < datalen; i++) {
-            for (int j = 0; j <= pkt.length; j++) {
-                Logger.confirm(fileContents[datalen - 1].toString());
-                pkt[j] = fileContents[datalen];
-            }
-            getNetworkLayer().sendPacket(pkt);
+        for (int j = 0; j <= pkt.length; j++) {
+            Logger.confirm(fileContents[j].toString());
+            pkt[j] = fileContents[j];
         }
+        getNetworkLayer().sendPacket(pkt);
+
+
+        boolean stop;
+        Integer[] acknowledgement = getNetworkLayer().receivePacket();
+        if (acknowledgement != null) {
+
+            // tell the user
+            System.out.println("Received acknowledgement for packet" + acknowledgement[0]);
+        } else {
+            // wait ~10ms (or however long the OS makes us wait) before trying again
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                stop = true;
+            }
+        }
+
     }
 
     @Override
