@@ -27,17 +27,28 @@ public class MyProtocol extends IRDTProtocol {
     static final int HEADERSIZE = 1;   // number of header bytes in each packet
     static final int DATASIZE = 128;   // max. number of user data bytes in each packet
     static final int PIPESIZE = 3;
+    static int pointer = 0;
 
     @Override
     public void sender() {
-        int pointer = 0;
 
         Integer[] fileContents = Utils.getFileContents(getFileID());
+//        HashMap<Integer, Integer[]> pld = new HashMap<>();
 
-        for (Integer i : fileContents) {
-            Logger.confirm(i.toString());
+//        for (Integer i : fileContents) {
+//            Logger.confirm(i.toString());
+//        }
+
+        int datalen = Math.min(DATASIZE, fileContents.length - pointer);
+        Integer[] data = new Integer[PIPESIZE];
+
+        for (int i = 0; i < datalen; i++) {
+            for (int j = 0; j <= data.length; j++) {
+                Logger.confirm(fileContents[datalen].toString());
+                data[j] = fileContents[datalen];
+            }
+            getNetworkLayer().sendPacket(data);
         }
-
     }
 
     @Override
