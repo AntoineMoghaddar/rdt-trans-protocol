@@ -93,7 +93,6 @@ public class MyProtocol extends IRDTProtocol {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
                     quit = -1;
-
                 }
             }
         }
