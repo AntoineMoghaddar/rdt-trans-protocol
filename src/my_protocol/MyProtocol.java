@@ -36,7 +36,7 @@ public class MyProtocol extends IRDTProtocol {
         HashMap<Boolean, Integer[]> chunk = new HashMap<>();
         acked = new ArrayList<>();
 
-        for (Integer[] datachunk : chunkArray(fileContents, 3)) {
+        for (Integer[] datachunk : chunkArray(fileContents, 5)) {
             chunk.put(false, datachunk);
         }
 
