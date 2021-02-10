@@ -42,7 +42,7 @@ public class MyProtocol extends IRDTProtocol {
         return (acked.contains(toCheck));
     }
 
-    private void checkReceivedAcks() {
+    private boolean checkReceivedAcks() {
         Integer[] acknowledgement = getNetworkLayer().receivePacket();
 
         if (acknowledgement != null) {
@@ -51,14 +51,16 @@ public class MyProtocol extends IRDTProtocol {
             System.out.println("Received acknowledgement for packet with header: " + acknowledgement[0]);
             acked.add(acknowledgement[0]);
             LAR = acknowledgement[0];
+            return true;
         } else {
             Logger.err("Nothing Found yet");
+            return false;
             // wait ~10ms (or however long the OS makes us wait) before trying again
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                Logger.err("Interrupted; Cause: " + e.getMessage());
-            }
+//            try {
+//                Thread.sleep(10);
+//            } catch (InterruptedException e) {
+//                Logger.err("Interrupted; Cause: " + e.getMessage());
+//            }
         }
     }
 
@@ -79,6 +81,7 @@ public class MyProtocol extends IRDTProtocol {
         Iterator it = data.entrySet().iterator();
         int[] range = giveNextRange();
         //Send first range
+        loop:
         while (LAR < fileContents.length) {
             for (int i = range[0]; i < range[1]; i++) {
                 if (it.hasNext()) {
@@ -87,7 +90,9 @@ public class MyProtocol extends IRDTProtocol {
                     sent.add((Integer) pair.getKey());
                 }
             }
-            checkReceivedAcks();
+            if (!checkReceivedAcks()) {
+                continue loop;
+            }
             range = giveNextRange();
         }
 //        Integer[] fileContents = Utils.getFileContents(getFileID());
