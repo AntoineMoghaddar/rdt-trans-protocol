@@ -120,6 +120,11 @@ public class MyProtocol extends IRDTProtocol {
             output[i] = temp;
         }
 
+        for (Integer[] i : output) {
+            for (Integer j : i) {
+                Logger.confirm(j);
+            }
+        }
         return output;
     }
 }
