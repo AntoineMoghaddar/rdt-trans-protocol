@@ -81,13 +81,13 @@ public class MyProtocol extends IRDTProtocol {
             if (ack != null) {
                 int newack = ack[0];
                 for (int j = i; j < PIPESIZE; j++) {
+                    if (newack == sentItems[j][0]) {
+                        received[j] = -1;
+                    } else {
+                        received[j] = i;
+                    }
+                }
 
-                }
-                if (newack == sentItems[i][0]) {
-                    received[i] = -1;
-                } else if (newack == sentItems[i + 1][0]) {
-                    received[i] = i;
-                }
 
             } else {
                 // wait ~10ms (or however long the OS makes us wait) before trying again
@@ -109,6 +109,9 @@ public class MyProtocol extends IRDTProtocol {
         for (int i = 0; i < PIPESIZE; i++) {
             Integer[] ack = getNetworkLayer().receivePacket();
             if (ack != null) {
+                // tell the user
+                System.out.println("Received packet, length=" + ack.length + "  first byte=" + ack[0]);
+
                 if (ack[0].equals(sentItems[i][0])) rec[i] = -1;
                 else rec[i] = i;
             } else {
