@@ -29,7 +29,7 @@ public class MyProtocol extends IRDTProtocol {
 
         //setup the correct packets for each individual item.
         for (int i = 0; i < items.length; i++) {
-            packets[i] = setupPacket(id, i);
+            packets[i] = setupPacket(id, items[i]);
             id++;
         }
 
@@ -66,6 +66,7 @@ public class MyProtocol extends IRDTProtocol {
     }
 
     private Integer[] setupPacket(int id, int item) {
+//      System.arraycopy(item, id, pkt, HEADERSIZE, datalen);
         return new Integer[]{id, item};
     }
 
