@@ -30,9 +30,7 @@ public class MyProtocol extends IRDTProtocol {
         //setup the correct packets for each individual item.
         for (int i = 0; i < items.length; i++) {
             packets[i] = setupPacket(id, i);
-            Logger.confirm("value1: " + packets[i][0] + " value2: " + packets[i][1]);
             id++;
-            Logger.confirm("value of id" + id);
         }
 
         //Transmit in chunks of PIPESIZE length
@@ -64,6 +62,7 @@ public class MyProtocol extends IRDTProtocol {
     }
 
     private void transmit(Integer[] item) {
+        Logger.confirm("value1: " + item[0] + " value2: " + item[1]);
         getNetworkLayer().sendPacket(item);
     }
 
