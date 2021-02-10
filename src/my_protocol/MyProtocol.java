@@ -39,7 +39,10 @@ public class MyProtocol extends IRDTProtocol {
         boolean stop = false;
         int pointer = 0;
 
-        for (int i = 0; i < fileContents.length; i += DATASIZE) {
+        int datalen = Math.min(DATASIZE, fileContents.length - pointer);
+
+
+        for (int i = 0; i < datalen; i += DATASIZE) {
             alldata.add(Arrays.copyOfRange(fileContents, i, i + DATASIZE));
         }
 
@@ -54,16 +57,60 @@ public class MyProtocol extends IRDTProtocol {
             for (int i = 0; i < PIPESIZE; i++) {
                 Integer[] pkt = new Integer[HEADERSIZE + DATASIZE];
                 getNetworkLayer().sendPacket(pkt);
+                stop = true;
             }
         }
     }
 
     @Override
     public void TimeoutElapsed(Object tag) {
+        int z = (Integer) tag;
+        // handle expiration of the timeout:
+        System.out.println("Timer expired with tag=" + z);
     }
 
     @Override
     public Integer[] receiver() {
-        return null;
+        System.out.println("Receiving...");
+
+        // create the array that will contain the file contents
+        // note: we don't know yet how large the file will be, so the easiest (but not most efficient)
+        //   is to reallocate the array every time we find out there's more data
+        Integer[] fileContents = new Integer[0];
+
+        // loop until we are done receiving the file
+        boolean stop = false;
+        while (!stop) {
+
+            // try to receive a packet from the network layer
+            Integer[] packet = getNetworkLayer().receivePacket();
+
+            // if we indeed received a packet
+            if (packet != null) {
+
+                // tell the user
+                System.out.println("Received packet, length=" + packet.length + "  first byte=" + packet[0]);
+
+                // append the packet's data part (excluding the header) to the fileContents array, first making it larger
+                int oldlength = fileContents.length;
+                int datalen = packet.length - HEADERSIZE;
+                fileContents = Arrays.copyOf(fileContents, oldlength + datalen);
+                System.arraycopy(packet, HEADERSIZE, fileContents, oldlength, datalen);
+
+                // and let's just hope the file is now complete
+                stop = true;
+
+            } else {
+                // wait ~10ms (or however long the OS makes us wait) before trying again
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    stop = true;
+                }
+            }
+        }
+
+        // return the output file
+        return fileContents;
     }
 }
