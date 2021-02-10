@@ -152,8 +152,16 @@ public class MyProtocol extends IRDTProtocol {
     @Override
     public Integer[] receiver() {
         System.out.println("Receiving...");
-
-        return checkIncomingtwo();
+        Integer[] packet = getNetworkLayer().receivePacket();;
+        while (packet == null) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            packet = getNetworkLayer().receivePacket();
+        }
+        return checkIncomingtwo(packet);
     }
 
     @Override
