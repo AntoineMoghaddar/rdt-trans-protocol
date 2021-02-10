@@ -49,7 +49,7 @@ public class MyProtocol extends IRDTProtocol {
             }
 
             //Check packets if one or many has failed, if so, retransmit
-            Integer[] notAck = checkIncoming(sentItems);
+            int[] notAck = checkIncoming(sentItems);
             for (int k : notAck) {
                 if (k != -1) {
                     switch (k) {
@@ -74,9 +74,8 @@ public class MyProtocol extends IRDTProtocol {
     // Wat er verwacht wordt: [0, -1, 2]
     // -1 = transmission succesvol
     // index = niet succesvol
-    private Integer[] checkIncoming(Integer[][] sentItems) {
+    private int[] checkIncoming(Integer[][] sentItems) {
         int[] received = new int[PIPESIZE];
-        Integer[] fileContents = new Integer[0];
 
         //Checken of er een ACK binnen komt en welke
         for (int i = 0; i < PIPESIZE; i++) {
@@ -88,17 +87,6 @@ public class MyProtocol extends IRDTProtocol {
                         received[j] = -1;
                     }
                 }
-
-                // tell the user
-                System.out.println("Received packet, length=" + received.length + "  first byte=" + received[0] + " Second byte= " + received[1]);
-
-                // append the packet's data part (excluding the header) to the fileContents array, first making it larger
-                int oldlength = fileContents.length;
-                int datalen = received.length - HEADERSIZE;
-                fileContents = Arrays.copyOf(fileContents, oldlength + datalen);
-                System.arraycopy(received, HEADERSIZE, fileContents, oldlength, datalen);
-
-
             } else {
                 // wait ~10ms (or however long the OS makes us wait) before trying again
                 try {
@@ -114,7 +102,7 @@ public class MyProtocol extends IRDTProtocol {
                 received[i] = i;
             }
         }
-        return fileContents;
+        return received;
     }
 
 
@@ -171,8 +159,7 @@ public class MyProtocol extends IRDTProtocol {
             }
             packet = getNetworkLayer().receivePacket();
         }
-
-        return checkIncoming(new Integer[][]{new Integer[]{packet[0]}});
+        return checkIncomingtwo(packet);
     }
 
     @Override
