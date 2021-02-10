@@ -21,188 +21,128 @@ import java.util.*;
  */
 public class MyProtocol extends IRDTProtocol {
 
-    // change the following as you wish:
-    static final int HEADERSIZE = 1;   // number of header bytes in each packet
-    static final int DATASIZE = 128;   // max. number of user data bytes in each packet
-    static final int PIPESIZE = 4;
-    static int LAR = 0;
+    static final int PIPESIZE = 3;
+    static int id = 0, quit;
 
-    private ArrayList<Integer> sent;
-    private ArrayList<Integer> acked;
+    private void slidingWindow(Integer[] items) {
+        Integer[][] packets = new Integer[items.length][];
 
-    private int[] giveNextRange() {
-        if (checkAck(LAR)) {
-            return new int[]{LAR + 1, LAR + PIPESIZE};
-        }
-        return new int[]{LAR, LAR + PIPESIZE};
-
-    }
-
-    private boolean checkAck(int toCheck) {
-        return (acked.contains(toCheck));
-    }
-
-    private boolean checkReceivedAcks() {
-        Integer[] acknowledgement = getNetworkLayer().receivePacket();
-
-        if (acknowledgement != null) {
-            Logger.confirm(acknowledgement[0]);
-            // tell the user
-            System.out.println("Received acknowledgement for packet with header: " + acknowledgement[0]);
-            acked.add(acknowledgement[0]);
-            LAR = acknowledgement[0];
-            return true;
-        } else {
-            Logger.err("Nothing Found yet");
-            return false;
-            // wait ~10ms (or however long the OS makes us wait) before trying again
-//            try {
-//                Thread.sleep(10);
-//            } catch (InterruptedException e) {
-//                Logger.err("Interrupted; Cause: " + e.getMessage());
-//            }
-        }
-    }
-
-    @Override
-    public void sender() {
-        sent = new ArrayList<>();
-        acked = new ArrayList<>();
-
-        Integer[] fileContents = Utils.getFileContents(getFileID());
-        HashMap<Integer, Integer> data = new HashMap<>();
-
-        if (fileContents != null) {
-            for (int i = 0; i < fileContents.length; i++) {
-                data.put(i, fileContents[i]);
-            }
+        //setup the correct packets for each individual item.
+        for (int i = 0; i < items.length; i++) {
+            packets[i] = setupPacket(id, i);
+            id++;
         }
 
-        Iterator it = data.entrySet().iterator();
-        int[] range = giveNextRange();
-        //Send first range
-        loop:
-        while (LAR < fileContents.length) {
-            for (int i = range[0]; i < range[1]; i++) {
-                if (it.hasNext()) {
-                    Map.Entry pair = (Map.Entry) it.next();
-                    getNetworkLayer().sendPacket(new Integer[]{(Integer) pair.getKey(), (Integer) pair.getValue()});
-                    sent.add((Integer) pair.getKey());
+        //Transmit in chunks of PIPESIZE length
+        for (int i = 0; i < packets.length; i += PIPESIZE) {
+            Integer[][] sentItems = new Integer[PIPESIZE][];
+            for (int j = 0; j < PIPESIZE; j++) {
+                if (packets[i + j] != null) {
+                    transmit(packets[i + j]);
+                    sentItems[j] = packets[i + j];
+                } else {
+                    Logger.err("Empty packet, end of line?");
+                    quit = -1;
                 }
             }
-            if (!checkReceivedAcks()) {
-                continue loop;
+
+            //Check packets if one or many has failed, if so, retransmit
+            int[] notAck = checkIncomingtwo(sentItems);
+            for (int k : notAck) {
+                if (k != -1) {
+                    switch (k) {
+                        case 0 -> transmit(packets[i]);
+                        case 1 -> transmit(packets[i + 1]);
+                        case 2 -> transmit(packets[i + 2]);
+                        default -> Logger.err("Out of bound, you cannot perform this action");
+                    }
+                }
             }
-            range = giveNextRange();
         }
-//        Integer[] fileContents = Utils.getFileContents(getFileID());
-//        HashMap<Boolean, Integer[]> chunk = new HashMap<>();
-//        acked = new ArrayList<>();
-//
-//        for (Integer[] datachunk : chunkArray(fileContents, 5)) {
-//            chunk.put(false, datachunk);
-//        }
-//
-//        Iterator it = chunk.entrySet().iterator();
-//        while (it.hasNext()) {
-//            Map.Entry pair = (Map.Entry) it.next();
-//            getNetworkLayer().sendPacket((Integer[]) pair.getValue());
-//            try {
-//                Thread.sleep(10);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//
-
-        //TODO: Wat krijgen we terug, hoe zetten we dit op done
-//        checkChunk()
-        // write something random into the header byte
-
-        // copy databytes from the input file into data part of the packet, i.e., after the header
-//        System.arraycopy(fileContents, filePointer, pkt, HEADERSIZE, datalen);
-//        getNetworkLayer().sendPacket(pkt);
-
-
-//
     }
 
-    @Override
-    public void TimeoutElapsed(Object tag) {
-        int z = (Integer) tag;
-        // handle expiration of the timeout:
-        System.out.println("Timer expired with tag=" + z);
+    private void transmit(Integer[] item) {
+        getNetworkLayer().sendPacket(item);
     }
 
-    @Override
-    public Integer[] receiver() {
-        System.out.println("Receiving...");
+    private Integer[] setupPacket(int id, int item) {
+        return new Integer[]{id, item};
+    }
 
-        // create the array that will contain the file contents
-        // note: we don't know yet how large the file will be, so the easiest (but not most efficient)
-        //   is to reallocate the array every time we find out there's more data
-        Integer[] fileContents = new Integer[0];
+    // Wat er verwacht wordt: [0, -1, 2]
+    // -1 = transmission succesvol
+    // index = niet succesvol
+    private int[] checkIncoming(Integer[][] sentItems) {
+        int[] received = new int[PIPESIZE];
 
-        // loop until we are done receiving the file
-        boolean stop = false;
-        while (!stop) {
+        //Checken of er een ACK binnen komt en welke
+        for (int i = 0; i < PIPESIZE; i++) {
+            Integer[] ack = getNetworkLayer().receivePacket();
+            if (ack != null) {
+                int newack = ack[0];
+                for (int j = i; j < PIPESIZE; j++) {
 
-            // try to receive a packet from the network layer
-            Integer[] packet = getNetworkLayer().receivePacket();
-
-            // if we indeed received a packet
-            if (packet != null) {
-
-                // tell the user
-                System.out.println("Received packet, length=" + packet.length + "  first byte=" + packet[0]);
-
-                // append the packet's data part (excluding the header) to the fileContents array, first making it larger
-                int oldlength = fileContents.length;
-                int datalen = packet.length - HEADERSIZE;
-                fileContents = Arrays.copyOf(fileContents, oldlength + datalen);
-                System.arraycopy(packet, HEADERSIZE, fileContents, oldlength, datalen);
-
-                // and let's just hope the file is now complete
-                stop = true;
+                }
+                if (newack == sentItems[i][0]) {
+                    received[i] = -1;
+                } else if (newack == sentItems[i + 1][0]) {
+                    received[i] = i;
+                }
 
             } else {
                 // wait ~10ms (or however long the OS makes us wait) before trying again
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
-                    stop = true;
+                    quit = -1;
+
                 }
             }
         }
-
-        // return the output file
-        return fileContents;
+        return received;
     }
 
 
-    public static Integer[][] chunkArray(Integer[] array, int chunkSize) {
-        int numOfChunks = (int) Math.ceil((double) array.length / chunkSize);
-        Integer[][] output = new Integer[numOfChunks][];
+    private int[] checkIncomingtwo(Integer[][] sentItems) {
+        int[] rec = new int[PIPESIZE];
 
-        for (int i = 0; i < numOfChunks; ++i) {
-            int start = i * chunkSize;
-            int length = Math.min(array.length - start, chunkSize);
-
-            Integer[] temp = new Integer[length];
-            System.arraycopy(array, start, temp, 0, length);
-            output[i] = temp;
-        }
-//
-        for (Integer[] i : output) {
-
-            System.out.print("\n[");
-            for (Integer j : i) {
-                System.out.print(j + ",");
+        for (int i = 0; i < PIPESIZE; i++) {
+            Integer[] ack = getNetworkLayer().receivePacket();
+            if (ack != null) {
+                if (ack[0].equals(sentItems[i][0])) rec[i] = -1;
+                else rec[i] = i;
+            } else {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    quit = -1;
+                    Logger.err(e.getMessage());
+                }
             }
-            System.out.print("]");
         }
-        return output;
+        return rec;
     }
 
+
+    @Override
+    public void sender() {
+        quit = 0;
+
+        Integer[] fileContents = Utils.getFileContents(getFileID());
+        if (fileContents != null) {
+            while (quit != -1) {
+                slidingWindow(fileContents);
+            }
+        }
+    }
+
+    @Override
+    public Integer[] receiver() {
+        return new Integer[0];
+    }
+
+    @Override
+    public void TimeoutElapsed(Object tag) {
+
+    }
 }
