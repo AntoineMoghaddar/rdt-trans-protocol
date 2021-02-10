@@ -44,7 +44,13 @@ public class MyProtocol extends IRDTProtocol {
         while (it.hasNext()) {
             Map.Entry pair = (Map.Entry) it.next();
             getNetworkLayer().sendPacket((Integer[]) pair.getValue());
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+
 
 
         //TODO: Wat krijgen we terug, hoe zetten we dit op done
@@ -56,21 +62,22 @@ public class MyProtocol extends IRDTProtocol {
 //        getNetworkLayer().sendPacket(pkt);
 
 
-        boolean stop;
-        Integer[] acknowledgement = getNetworkLayer().receivePacket();
-        Logger.confirm(acknowledgement[0]);
-        if (acknowledgement != null) {
-
-            // tell the user
-            System.out.println("Received acknowledgement for packet" + acknowledgement[0]);
-        } else {
-            // wait ~10ms (or however long the OS makes us wait) before trying again
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                stop = true;
-            }
-        }
+//        boolean stop;
+//        Integer[] acknowledgement = getNetworkLayer().receivePacket();
+//
+//        if (acknowledgement.length > 0) {
+//            Logger.confirm(acknowledgement[0]);
+//            // tell the user
+//            System.out.println("Received acknowledgement for packet with header: " + acknowledgement[0]);
+//            acked.add(acknowledgement[0]);
+//        } else {
+//            // wait ~10ms (or however long the OS makes us wait) before trying again
+//            try {
+//                Thread.sleep(10);
+//            } catch (InterruptedException e) {
+//                stop = true;
+//            }
+//        }
 
     }
 
@@ -140,14 +147,14 @@ public class MyProtocol extends IRDTProtocol {
             output[i] = temp;
         }
 //
-//        for (Integer[] i : output) {
-//
-//            System.out.print("\n[");
-//            for (Integer j : i) {
-//                System.out.print(j + ",");
-//            }
-//            System.out.print("]");
-//        }
+        for (Integer[] i : output) {
+
+            System.out.print("\n[");
+            for (Integer j : i) {
+                System.out.print(j + ",");
+            }
+            System.out.print("]");
+        }
         return output;
     }
 
