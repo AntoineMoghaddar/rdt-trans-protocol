@@ -47,7 +47,7 @@ public class MyProtocol extends IRDTProtocol {
             }
 
             //Check packets if one or many has failed, if so, retransmit
-            int[] notAck = checkIncomingtwo(sentItems);
+            int[] notAck = checkIncoming(sentItems);
             for (int k : notAck) {
                 if (k != -1) {
                     switch (k) {
@@ -83,8 +83,6 @@ public class MyProtocol extends IRDTProtocol {
                 for (int j = i; j < PIPESIZE; j++) {
                     if (newack == sentItems[j][0]) {
                         received[j] = -1;
-                    } else {
-                        received[j] = j;
                     }
                 }
 
@@ -97,6 +95,11 @@ public class MyProtocol extends IRDTProtocol {
                     quit = -1;
 
                 }
+            }
+        }
+        for(int i =0; i < PIPESIZE; i++){
+            if(received[i] == 0) {
+                received[i] = i;
             }
         }
         return received;
@@ -175,7 +178,7 @@ public class MyProtocol extends IRDTProtocol {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
-                    stop = true;
+                    stop = false;
                 }
             }
         }
