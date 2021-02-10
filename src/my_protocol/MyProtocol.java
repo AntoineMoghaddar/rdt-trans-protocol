@@ -40,14 +40,16 @@ public class MyProtocol extends IRDTProtocol {
 //        }
 
         int datalen = Math.min(DATASIZE, fileContents.length - pointer);
-        Integer[] data = new Integer[PIPESIZE];
+        Integer[] pkt = new Integer[HEADERSIZE + datalen];
+
+        System.arraycopy(fileContents, pointer, pkt, HEADERSIZE, datalen);
 
         for (int i = 0; i < datalen; i++) {
-            for (int j = 0; j <= data.length; j++) {
-                Logger.confirm(fileContents[datalen].toString());
-                data[j] = fileContents[datalen];
+            for (int j = 0; j <= pkt.length; j++) {
+                Logger.confirm(fileContents[datalen - 1].toString());
+                pkt[j] = fileContents[datalen];
             }
-            getNetworkLayer().sendPacket(data);
+            getNetworkLayer().sendPacket(pkt);
         }
     }
 
