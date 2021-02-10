@@ -36,7 +36,7 @@ public class MyProtocol extends IRDTProtocol {
         //Transmit in chunks of PIPESIZE length
         for (int i = 0; i < packets.length; i += PIPESIZE) {
             Integer[][] sentItems = new Integer[PIPESIZE][];
-            for (int j = 0; j < PIPESIZE; j++) {
+            for (int j = 0; j < PIPESIZE - 1; j++) {
                 if (packets[i + j] != null) {
                     transmit(packets[i + j]);
                     sentItems[j] = packets[i + j];
@@ -85,8 +85,6 @@ public class MyProtocol extends IRDTProtocol {
                         received[j] = -1;
                     }
                 }
-
-
             } else {
                 // wait ~10ms (or however long the OS makes us wait) before trying again
                 try {
@@ -106,20 +104,24 @@ public class MyProtocol extends IRDTProtocol {
     }
 
 
-    private Integer[] checkIncomingtwo() {
+    private Integer[] checkIncomingtwo(Integer[] packet) {
         Integer[] fileContents = new Integer[0];
 
+        Logger.confirm("reached ci2");
         for (int i = 0; i < PIPESIZE; i++) {
-            Integer[] ack = getNetworkLayer().receivePacket();
-            if (ack != null) {
+            Logger.confirm("reached ci2-for");
+
+            if (packet != null) {
+                Logger.confirm("reached ci2-if");
+
                 // tell the user
-                System.out.println("Received packet, length=" + ack.length + "  first byte=" + ack[0]);
+                System.out.println("Received packet, length=" + packet.length + "  first byte=" + packet[0]);
 
                 // append the packet's data part (excluding the header) to the fileContents array, first making it larger
                 int oldlength = fileContents.length;
-                int datalen = ack.length - HEADERSIZE;
+                int datalen = packet.length - HEADERSIZE;
                 fileContents = Arrays.copyOf(fileContents, oldlength + datalen);
-                System.arraycopy(ack, HEADERSIZE, fileContents, oldlength, datalen);
+                System.arraycopy(packet, HEADERSIZE, fileContents, oldlength, datalen);
 
             } else {
                 try {
