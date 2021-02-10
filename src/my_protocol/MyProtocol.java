@@ -115,7 +115,7 @@ public class MyProtocol extends IRDTProtocol {
                 Logger.confirm("reached ci2-if");
 
                 // tell the user
-                System.out.println("Received packet, length=" + packet.length + "  first byte=" + packet[0]);
+                System.out.println("Received packet, length=" + packet.length + "  first byte=" + packet[0] + " Second byte= " + packet[1]);
 
                 // append the packet's data part (excluding the header) to the fileContents array, first making it larger
                 int oldlength = fileContents.length;
