@@ -33,22 +33,8 @@ public class MyProtocol extends IRDTProtocol {
     public void sender() {
 
         Integer[] fileContents = Utils.getFileContents(getFileID());
-//        HashMap<Integer, Integer[]> pld = new HashMap<>();
-
-//        for (Integer i : fileContents) {
-//            Logger.confirm(i.toString());
-//        }
-
-        int datalen = Math.min(DATASIZE, fileContents.length - pointer);
-        Integer[] pkt = new Integer[HEADERSIZE + datalen];
-
-        System.arraycopy(fileContents, pointer, pkt, HEADERSIZE, datalen);
-
-        for (int j = 0; j <= pkt.length; j++) {
-            Logger.confirm(fileContents[j].toString());
-            pkt[j] = fileContents[j];
-        }
-        getNetworkLayer().sendPacket(pkt);
+        chunkArray(fileContents, 3);
+//        getNetworkLayer().sendPacket(pkt);
 
 
         boolean stop;
@@ -118,5 +104,22 @@ public class MyProtocol extends IRDTProtocol {
 
         // return the output file
         return fileContents;
+    }
+
+
+    public static Integer[][] chunkArray(Integer[] array, int chunkSize) {
+        int numOfChunks = (int) Math.ceil((double) array.length / chunkSize);
+        Integer[][] output = new Integer[numOfChunks][];
+
+        for (int i = 0; i < numOfChunks; ++i) {
+            int start = i * chunkSize;
+            int length = Math.min(array.length - start, chunkSize);
+
+            Integer[] temp = new Integer[length];
+            System.arraycopy(array, start, temp, 0, length);
+            output[i] = temp;
+        }
+
+        return output;
     }
 }
