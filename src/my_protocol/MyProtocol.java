@@ -4,9 +4,7 @@ import framework.IRDTProtocol;
 import framework.Utils;
 import Utils.Logger;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * @version 10-07-2019
@@ -28,12 +26,32 @@ public class MyProtocol extends IRDTProtocol {
     static final int DATASIZE = 128;   // max. number of user data bytes in each packet
     static final int PIPESIZE = 3;
     static int pointer = 0;
+    private ArrayList<Integer> acked;
+
 
     @Override
     public void sender() {
 
         Integer[] fileContents = Utils.getFileContents(getFileID());
-        chunkArray(fileContents, 3);
+        HashMap<Boolean, Integer[]> chunk = new HashMap<>();
+        acked = new ArrayList<>();
+
+        for (Integer[] datachunk : chunkArray(fileContents, 3)) {
+            chunk.put(false, datachunk);
+        }
+
+        Iterator it = chunk.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry) it.next();
+            getNetworkLayer().sendPacket((Integer[]) pair.getValue());
+        }
+
+        //TODO: Wat krijgen we terug, hoe zetten we dit op done
+//        checkChunk()
+        // write something random into the header byte
+
+        // copy databytes from the input file into data part of the packet, i.e., after the header
+//        System.arraycopy(fileContents, filePointer, pkt, HEADERSIZE, datalen);
 //        getNetworkLayer().sendPacket(pkt);
 
 
@@ -129,5 +147,17 @@ public class MyProtocol extends IRDTProtocol {
             System.out.print("]");
         }
         return output;
+    }
+
+    private boolean checkChunk(Integer[] chunk) {
+        boolean isAcked = false;
+        for (Integer i : chunk) {
+            for (Integer j : acked) {
+                if (j.equals(i)) {
+                    isAcked = true;
+                }
+            }
+        }
+        return isAcked;
     }
 }
