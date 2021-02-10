@@ -57,6 +57,7 @@ public class MyProtocol extends IRDTProtocol {
 
         boolean stop;
         Integer[] acknowledgement = getNetworkLayer().receivePacket();
+        Logger.confirm(acknowledgement[0]);
         if (acknowledgement != null) {
 
             // tell the user
