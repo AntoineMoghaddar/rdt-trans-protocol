@@ -39,7 +39,6 @@ public class MyProtocol extends IRDTProtocol {
             for (int j = 0; j < PIPESIZE - 1; j++) {
                 if (packets[i + j] != null) {
                     transmit(packets[i + j]);
-                    Logger.confirm("value1: " + packets[i][0]);
                     sentItems[j] = packets[i + j];
                 } else {
                     Logger.err("Empty packet, end of line?");
@@ -63,7 +62,6 @@ public class MyProtocol extends IRDTProtocol {
     }
 
     private void transmit(Integer[] item) {
-        Logger.confirm("value1: " + item[0] + " value2: " + item[1]);
         getNetworkLayer().sendPacket(item);
     }
 
