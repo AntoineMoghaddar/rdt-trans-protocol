@@ -24,8 +24,11 @@ public class MyProtocol extends IRDTProtocol {
     static final int PIPESIZE = 3;
     static int id = 0, quit;
 
+    private Integer[][] sentItems;
+
     private void slidingWindow(Integer[] items) {
         Integer[][] packets = new Integer[items.length][];
+        sentItems = new Integer[PIPESIZE][];
 
         //setup the correct packets for each individual item.
         for (int i = 0; i < items.length; i++) {
@@ -35,7 +38,6 @@ public class MyProtocol extends IRDTProtocol {
 
         //Transmit in chunks of PIPESIZE length
         for (int i = 0; i < packets.length; i += PIPESIZE) {
-            Integer[][] sentItems = new Integer[PIPESIZE][];
             for (int j = 0; j < PIPESIZE - 1; j++) {
                 if (packets[i + j] != null) {
                     transmit(packets[i + j]);
@@ -47,7 +49,7 @@ public class MyProtocol extends IRDTProtocol {
             }
 
             //Check packets if one or many has failed, if so, retransmit
-            int[] notAck = checkIncoming(sentItems);
+            Integer[] notAck = checkIncoming(sentItems);
             for (int k : notAck) {
                 if (k != -1) {
                     switch (k) {
@@ -66,15 +68,15 @@ public class MyProtocol extends IRDTProtocol {
     }
 
     private Integer[] setupPacket(int id, int item) {
-//      System.arraycopy(item, id, pkt, HEADERSIZE, datalen);
         return new Integer[]{id, item};
     }
 
     // Wat er verwacht wordt: [0, -1, 2]
     // -1 = transmission succesvol
     // index = niet succesvol
-    private int[] checkIncoming(Integer[][] sentItems) {
+    private Integer[] checkIncoming(Integer[][] sentItems) {
         int[] received = new int[PIPESIZE];
+        Integer[] fileContents = new Integer[0];
 
         //Checken of er een ACK binnen komt en welke
         for (int i = 0; i < PIPESIZE; i++) {
@@ -86,6 +88,17 @@ public class MyProtocol extends IRDTProtocol {
                         received[j] = -1;
                     }
                 }
+
+                // tell the user
+                System.out.println("Received packet, length=" + received.length + "  first byte=" + received[0] + " Second byte= " + received[1]);
+
+                // append the packet's data part (excluding the header) to the fileContents array, first making it larger
+                int oldlength = fileContents.length;
+                int datalen = received.length - HEADERSIZE;
+                fileContents = Arrays.copyOf(fileContents, oldlength + datalen);
+                System.arraycopy(received, HEADERSIZE, fileContents, oldlength, datalen);
+
+
             } else {
                 // wait ~10ms (or however long the OS makes us wait) before trying again
                 try {
@@ -101,7 +114,7 @@ public class MyProtocol extends IRDTProtocol {
                 received[i] = i;
             }
         }
-        return received;
+        return fileContents;
     }
 
 
@@ -158,7 +171,8 @@ public class MyProtocol extends IRDTProtocol {
             }
             packet = getNetworkLayer().receivePacket();
         }
-        return checkIncomingtwo(packet);
+
+        return checkIncoming(new Integer[][]{new Integer[]{packet[0]}});
     }
 
     @Override
