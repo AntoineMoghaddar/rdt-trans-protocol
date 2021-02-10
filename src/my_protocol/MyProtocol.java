@@ -46,6 +46,7 @@ public class MyProtocol extends IRDTProtocol {
             getNetworkLayer().sendPacket((Integer[]) pair.getValue());
         }
 
+
         //TODO: Wat krijgen we terug, hoe zetten we dit op done
 //        checkChunk()
         // write something random into the header byte
@@ -138,15 +139,15 @@ public class MyProtocol extends IRDTProtocol {
             System.arraycopy(array, start, temp, 0, length);
             output[i] = temp;
         }
-
-        for (Integer[] i : output) {
-
-            System.out.print("\n[");
-            for (Integer j : i) {
-                System.out.print(j + ",");
-            }
-            System.out.print("]");
-        }
+//
+//        for (Integer[] i : output) {
+//
+//            System.out.print("\n[");
+//            for (Integer j : i) {
+//                System.out.print(j + ",");
+//            }
+//            System.out.print("]");
+//        }
         return output;
     }
 
