@@ -52,6 +52,7 @@ public class MyProtocol extends IRDTProtocol {
             acked.add(acknowledgement[0]);
             LAR = acknowledgement[0];
         } else {
+            Logger.err("Nothing Found yet");
             // wait ~10ms (or however long the OS makes us wait) before trying again
             try {
                 Thread.sleep(10);
