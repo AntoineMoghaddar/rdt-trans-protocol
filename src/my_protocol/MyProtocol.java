@@ -107,12 +107,8 @@ public class MyProtocol extends IRDTProtocol {
     private Integer[] checkIncomingtwo(Integer[] packet) {
         Integer[] fileContents = new Integer[0];
 
-        Logger.confirm("reached ci2");
         for (int i = 0; i < PIPESIZE; i++) {
-            Logger.confirm("reached ci2-for");
-
             if (packet != null) {
-                Logger.confirm("reached ci2-if");
 
                 // tell the user
                 System.out.println("Received packet, length=" + packet.length + "  first byte=" + packet[0] + " Second byte= " + packet[1]);
