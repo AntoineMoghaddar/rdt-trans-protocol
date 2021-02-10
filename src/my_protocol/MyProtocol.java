@@ -30,36 +30,14 @@ public class MyProtocol extends IRDTProtocol {
 
     @Override
     public void sender() {
-        Logger.confirm("Sending...");
-
-        ArrayList<Integer[]> alldata = new ArrayList<>();
-        // read from the input file
-        Integer[] fileContents = Utils.getFileContents(getFileID());
-        HashMap<Integer, HashMap<Boolean, Integer[]>> pipelines = new HashMap<>();
-        boolean stop = false;
         int pointer = 0;
 
-        int datalen = Math.min(DATASIZE, fileContents.length - pointer);
+        Integer[] fileContents = Utils.getFileContents(getFileID());
 
-
-        for (int i = 0; i < datalen; i += DATASIZE) {
-            alldata.add(Arrays.copyOfRange(fileContents, i, i + DATASIZE));
+        for (Integer i : fileContents) {
+            Logger.confirm(i.toString());
         }
 
-        while (!stop) {
-            for (int i = 0; i < PIPESIZE; i++) {
-                HashMap<Boolean, Integer[]> tmp = new HashMap<>();
-                tmp.put(false, alldata.get(i + pointer));
-                pipelines.put((i + pointer), tmp);
-                pointer++;
-            }
-
-            for (int i = 0; i < PIPESIZE; i++) {
-                Integer[] pkt = new Integer[HEADERSIZE + DATASIZE];
-                getNetworkLayer().sendPacket(pkt);
-                stop = true;
-            }
-        }
     }
 
     @Override
