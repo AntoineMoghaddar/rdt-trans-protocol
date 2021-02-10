@@ -27,9 +27,44 @@ public class MyProtocol extends IRDTProtocol {
     static final int PIPESIZE = 4;
     static int LAR = 0;
 
+    private ArrayList<Integer> sent;
+    private ArrayList<Integer> acked;
+
+    private int[] giveNextRange() {
+        if (checkAck(LAR)) {
+            return new int[]{LAR + 1, LAR + PIPESIZE};
+        }
+        return new int[]{LAR, LAR + PIPESIZE};
+
+    }
+
+    private boolean checkAck(int toCheck) {
+        return (acked.contains(toCheck));
+    }
+
+    private void checkReceivedAcks() {
+        Integer[] acknowledgement = getNetworkLayer().receivePacket();
+
+        if (acknowledgement != null) {
+            Logger.confirm(acknowledgement[0]);
+            // tell the user
+            System.out.println("Received acknowledgement for packet with header: " + acknowledgement[0]);
+            acked.add(acknowledgement[0]);
+            LAR = acknowledgement[0];
+        } else {
+            // wait ~10ms (or however long the OS makes us wait) before trying again
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                Logger.err("Interrupted; Cause: " + e.getMessage());
+            }
+        }
+    }
+
     @Override
     public void sender() {
-
+        sent = new ArrayList<>();
+        acked = new ArrayList<>();
 
         Integer[] fileContents = Utils.getFileContents(getFileID());
         HashMap<Integer, Integer> data = new HashMap<>();
@@ -40,52 +75,20 @@ public class MyProtocol extends IRDTProtocol {
             }
         }
 
-        ArrayList<Integer> sent = new ArrayList<>();
-        ArrayList<Integer> acked = new ArrayList<>();
-
-        //Send first 4
         Iterator it = data.entrySet().iterator();
-        int index = 0;
-        while (it.hasNext() && index < PIPESIZE) {
-            Map.Entry pair = (Map.Entry) it.next();
-            getNetworkLayer().sendPacket(new Integer[]{(Integer) pair.getKey(), (Integer) pair.getValue()});
-            sent.add((Integer) pair.getKey());
-            index++;
-        }
-
-        nxtloop:
-        while (it.hasNext()) {
-            Map.Entry pair = (Map.Entry) it.next();
-            getNetworkLayer().sendPacket(new Integer[]{(Integer) pair.getKey(), (Integer) pair.getValue()});
-            sent.add((Integer) pair.getKey());
-            index++;
-
-
-            while (acked.size() != fileContents.length) {
-                Integer[] acknowledgement = getNetworkLayer().receivePacket();
-
-                if (acknowledgement != null) {
-                    Logger.confirm(acknowledgement[0]);
-                    // tell the user
-                    System.out.println("Received acknowledgement for packet with header: " + acknowledgement[0]);
-                    acked.add(acknowledgement[0]);
-                    LAR = acknowledgement[0];
-                } else {
-                    // wait ~10ms (or however long the OS makes us wait) before trying again
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        Logger.err("Interrupted; Cause: " + e.getMessage());
-                    }
-                }
-
-                if (LAR >= sent.get(sent.size() - 1)) {
-                    continue nxtloop;
+        int[] range = giveNextRange();
+        //Send first range
+        while (LAR < fileContents.length) {
+            for (int i = range[0]; i < range[1]; i++) {
+                if (it.hasNext()) {
+                    Map.Entry pair = (Map.Entry) it.next();
+                    getNetworkLayer().sendPacket(new Integer[]{(Integer) pair.getKey(), (Integer) pair.getValue()});
+                    sent.add((Integer) pair.getKey());
                 }
             }
+            checkReceivedAcks();
+            range = giveNextRange();
         }
-
-//
 //        Integer[] fileContents = Utils.getFileContents(getFileID());
 //        HashMap<Boolean, Integer[]> chunk = new HashMap<>();
 //        acked = new ArrayList<>();
@@ -117,7 +120,6 @@ public class MyProtocol extends IRDTProtocol {
 
 
 //
-
     }
 
     @Override
@@ -196,16 +198,5 @@ public class MyProtocol extends IRDTProtocol {
         }
         return output;
     }
-//
-//    private boolean checkChunk(Integer[] chunk) {
-//        boolean isAcked = false;
-//        for (Integer i : chunk) {
-//            for (Integer j : acked) {
-//                if (j.equals(i)) {
-//                    isAcked = true;
-//                }
-//            }
-//        }
-//        return isAcked;
-//    }
+
 }
